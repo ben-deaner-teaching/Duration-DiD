@@ -1,15 +1,3 @@
-This repo contains replication files for the paper "Causal Duration Analysis with  Diff-in-Diff" by Ben Deaner and Hyejin Ku.
-
-Replication files for the paper are provided in MATLAB (note that we have not included the dataset)
-
-We also include a STATA command in the .ado file and STATA .do file that replicates the results in the paper. The .ado file is written in the Mata language and is designed to be general purpose.
-
-
-INSTRUCTIONS FOR USING THE STATA COMMAND are below. Note that the .ado file has (at time of writing) been tested only on the data used in the paper. 
-Please email b.deaner@ucl.ac.uk with any queries or feedback on the command.
-
-
-
 # durationdid — Duration Difference-in-Differences
 
 Stata command implementing the estimator from Deaner and Ku (2025), "Causal Duration Analysis with Diff-in-Diff."
@@ -71,7 +59,7 @@ In all cases, individuals who are never observed in the absorbing state should h
 ## Syntax
 
 ```
-durationdid absorbed_time treatment [if] [in], tstar(#) [options]
+durationdid absorbed_time treatment [if] [in], tstar(#) [covariates(varlist) sweights(varname) options]
 ```
 
 ### Required arguments
@@ -87,6 +75,7 @@ durationdid absorbed_time treatment [if] [in], tstar(#) [options]
 | Option | Default | Description |
 |---|---|---|
 | `covariates(`*varlist*`)` | *(none)* | Variables used for covariate balancing. Weights are computed as density ratios of covariate cell frequencies between groups, among individuals not yet in the absorbing state at time 1. Cells with fewer than 2 untreated individuals are dropped. |
+| `sweights(`*varname*`)` | *(none)* | Sampling weights variable. When `covariates()` is also specified, sampling weights are used both in computing the covariate balancing density ratios (so that the target covariate distribution reflects the survey design) and as multiplicative individual-level weights. When used without `covariates()`, they are applied directly as individual-level weights. In both cases, sampling weights are normalized internally to have mean 1. |
 | `burnin(#)` | `1` | First period used in estimation of *c*. Periods before `burnin` receive zero weight in the estimation of the level difference (or ratio). |
 | `extrapend(#)` | `max(absorbed_time)` | Final period for extrapolation. Results are computed for periods 1 through `extrapend`. |
 | `spec(`*string*`)` | `cd` | Specification for the identifying restriction. `cd` = common dynamics (fixed level difference in hazard rates). `ph` = proportional hazards (fixed ratio of hazard rates). |
@@ -107,7 +96,7 @@ The command computes the negative log survival R_{k,t} = −ln(1 − E[Y_{i,t} |
 
 Counterfactual mean outcomes for the treated group are imputed by extrapolating the estimated relationship to the post-treatment period and inverting the log transformation. Treatment effects are the difference between observed and imputed counterfactual outcomes.
 
-If `covariates()` is specified, covariate balancing weights are computed using discrete cell frequencies, following the approach of Abadie (2005). For each covariate cell, the weight for untreated individuals is the ratio of the cell's frequency among treated survivors to its frequency among untreated survivors. Cells with fewer than 2 untreated individuals are dropped and remaining weights are rescaled.
+If `covariates()` is specified, covariate balancing weights are computed using discrete cell frequencies, following the approach of Abadie (2005). For each covariate cell, the weight for untreated individuals is the ratio of the cell's frequency among treated survivors to its frequency among untreated survivors. If `sweights()` is also specified, these cell frequencies are computed using the sampling weights. Cells with fewer than 2 untreated individuals (by unweighted count) are dropped and remaining weights are rescaled.
 
 ### Inference
 
@@ -195,6 +184,18 @@ durationdid duration treatment, tstar(202) covariates(start_day) spec(ph) breps(
 
 ```stata
 durationdid duration treatment, tstar(202) burnin(150) nograph
+```
+
+### With sampling weights
+
+```stata
+durationdid duration treatment, tstar(202) covariates(start_day) sweights(survey_wt)
+```
+
+Sampling weights are normalized internally to have mean 1. When combined with `covariates()`, they are incorporated into the covariate balancing density ratios and applied as individual-level weights. They can also be used independently of covariate balancing:
+
+```stata
+durationdid duration treatment, tstar(202) sweights(survey_wt)
 ```
 
 ### Full application example
