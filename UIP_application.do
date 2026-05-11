@@ -13,7 +13,7 @@ local t_star = 202
 local cohort_end = 273
 local extrap_end = 365
 local initial_PBD_end = 210
-local bootstrap_reps = 1000
+local bootstrap_reps = 10000
 local level = 0.95
 local parallel_level = 0.6
 
